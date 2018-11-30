@@ -7,6 +7,16 @@ import os
 import time
 slim = tf.contrib.slim
 
+from datasets import flowers
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow.contrib import slim
+import os
+from inception_resnet_v2 import inception_resnet_v2, inception_resnet_v2_arg_scope
+from tensorflow.contrib.framework.python.ops.variables import get_or_create_global_step
+import time
+
+
 # GUIDE ! https://kwotsin.github.io/tech/2017/02/11/transfer-learning.html
 
 #================ DATASET INFORMATION ======================
