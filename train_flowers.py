@@ -220,11 +220,10 @@ def run():
     '''
     with tf.Graph().as_default() as graph:
 
-    
+        #call datasets/flowers.py , not  above function!
         dataset = flowers.get_split('train', flowers_data_dir)
         images, _, labels = load_batch(dataset, batch_size=batch_size)
 
-        #Know the number steps to take before decaying the learning rate and batches per epoch
         #Know the number steps to take before decaying the learning rate and batches per epoch
         num_batches_per_epoch = int(dataset.num_samples / batch_size)
         num_steps_per_epoch = num_batches_per_epoch #Because one step is one batch processed
@@ -234,24 +233,22 @@ def run():
         #This function is used to init model and input necessary papermate
         with slim.arg_scope(inception_resnet_v2_arg_scope()):
             logits, end_points = inception_resnet_v2(images, num_classes = dataset.num_classes, is_training = True)
-        '''    
+        ''' 
+            what means is  logits??????????   
             logit = w*x + b,
             x: input, w: weight, b: bias. That's it.
             
             logit is defined as the output of a neuron without applying activation function:
             Define the scopes that you want to exclude for restoration (force to train!)
+        ''' 
+       
         '''
-        
+            when you are training on grayscale images, you would have to remove the initial input convolutional layer, which assumes you have an RGB image with 3 channels, if you set the argument channels=3 for the Image decoder in the get_split function. In total, here are the 3 scopes that you can exclude:
+            InceptionResnetV2/AuxLogits
+            InceptionResnetV2/Logits
+            InceptionResnetV2/Conv2d_1a_3x3 (Optional, for Grayscale images)
         '''
-        when you are training on grayscale images, you would have to remove the initial input convolutional layer, which assumes you have an RGB image with 3 channels, if you set the argument channels=3 for the Image decoder in the get_split function. In total, here are the 3 scopes that you can exclude:
-
-        InceptionResnetV2/AuxLogits
-        InceptionResnetV2/Logits
-        InceptionResnetV2/Conv2d_1a_3x3 (Optional, for Grayscale images)
-        '''
-        
         exclude = ['InceptionResnetV2/Logits', 'InceptionResnetV2/AuxLogits']
-        
         variables_to_restore = slim.get_variables_to_restore(exclude = exclude)
 
         #Perform one-hot-encoding of the labels (Try one-hot-encoding within the load_batch function!)
@@ -268,8 +265,8 @@ def run():
         # counte level of softmax_cross_entropy
         loss = tf.losses.softmax_cross_entropy(onehot_labels = one_hot_labels, logits = logits)
         total_loss = tf.losses.get_total_loss()    #obtain the regularization losses as well
-        #The total loss is defined as the cross entropy loss plus all of the weight
         
+        #The total loss is defined as the cross entropy loss plus all of the weight
         #Create the global step variable for monitoring the learning_rate and training.
         global_step = get_or_create_global_step()
 
@@ -285,25 +282,26 @@ def run():
         optimizer = tf.train.AdamOptimizer(learning_rate = lr)
 
         '''        
-        create_train_op perform more functions like gradient clipping or multiplication to 
-        prevent exploding or vanishing gradients. 
-        This is done rather than simply doing an Optimizer.minimize function, 
-        which simply just combines compute_gradients and 
-        apply_gradients without any gradient processing after compute_gradients.
+            create_train_op perform more functions like gradient clipping or multiplication to 
+            prevent exploding or vanishing gradients. 
+            This is done rather than simply doing an Optimizer.minimize function, 
+            which simply just combines compute_gradients and 
+            apply_gradients without any gradient processing after compute_gradients.
         '''
         train_op = slim.learning.create_train_op(total_loss, optimizer)
 
         ''' 
-        Now we simply get the predictions through extracting the probabilities predicted 
-        from end_points['Predictions'], 
-        and perform an argmax function that returns us the index of the highest probability,
-        which is also the class label.
+            Now we simply get the predictions through extracting the probabilities predicted 
+            from end_points['Predictions'], 
+            and perform an argmax function that returns us the index of the highest probability,
+            which is also the class label.
         '''
+        #return an index of the Max Value of array ->  https://blog.csdn.net/UESTC_C2_403/article/details/72232807
+        #  https://blog.csdn.net/qq575379110/article/details/70538051
+        predictions = tf.argmax(end_points['Predictions'], 1) 
+        probabilities = end_points['Predictions'] #
         
-        predictions = tf.argmax(end_points['Predictions'], 1)
-        probabilities = end_points['Predictions']
         accuracy, accuracy_update = tf.contrib.metrics.streaming_accuracy(predictions, labels)
-        
         metrics_op = tf.group(accuracy_update, probabilities)
 
 
