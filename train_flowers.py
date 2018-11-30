@@ -40,6 +40,10 @@ flowers_data_dir = '/home/aewin/work/anaconda3/code/models/research/slim/smorkin
 
 
 
+#Create the file pattern of your TFRecord files so that it could be recognized later on
+file_pattern = 'flowers_%s_*.tfrecord'
+
+
 #================= TRAINING INFORMATION ==================
 #State the number of epochs to train
 num_epochs = 1
