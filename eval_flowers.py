@@ -37,7 +37,7 @@ def run():
     with tf.Graph().as_default() as graph:
         tf.logging.set_verbosity(tf.logging.INFO)
         #Get the dataset first and load one batch of validation images and labels tensors. Set is_training as False so as to use the evaluation preprocessing
-        dataset = get_split('validation', dataset_dir)
+        dataset = flowers.get_split('validation', dataset_dir)
         images, raw_images, labels = load_batch(dataset, batch_size = batch_size, is_training = False)
 
         #Create some information about the training steps

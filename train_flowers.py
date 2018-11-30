@@ -234,7 +234,7 @@ def run():
         with slim.arg_scope(inception_resnet_v2_arg_scope()):
             logits, end_points = inception_resnet_v2(images, num_classes = dataset.num_classes, is_training = True)
         ''' 
-            what means is  logits??????????   
+            what mean is  logits??????????   
             logit = w*x + b,
             x: input, w: weight, b: bias. That's it.
             
