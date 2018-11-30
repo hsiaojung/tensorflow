@@ -7,15 +7,19 @@ import os
 import time
 slim = tf.contrib.slim
 
+# GUIDE ! https://kwotsin.github.io/tech/2017/02/11/transfer-learning.html
+
 #================ DATASET INFORMATION ======================
 #State dataset directory where the tfrecord files are located
-dataset_dir = '.'
+dataset_dir = '/home/aewin/work/anaconda3/code'
 
 #State where your log file is at. If it doesn't exist, create it.
-log_dir = './log'
+log_dir = '/home/aewin/work/anaconda3/code'
+DATA_DIR = log_dir
 
 #State where your checkpoint file is
-checkpoint_file = './inception_resnet_v2_2016_08_30.ckpt'
+checkpoint_file = '/home/aewin/work/anaconda3/code/inception_resnet_v2_2016_08_30.ckpt'
+checkpoint_file = '/home/aewin/work/anaconda3/code/inception_resnet_v2_2016_08_30.ckpt'
 
 #State the image size you're resizing your images to. We will use the default inception size of 299.
 image_size = 299
@@ -24,24 +28,16 @@ image_size = 299
 num_classes = 5
 
 #State the labels file and read it
-labels_file = './labels.txt'
+labels_file = '/home/aewin/work/anaconda3/code/models/research/slim/smorking/labels.txt'
 labels = open(labels_file, 'r')
 
 #Create a dictionary to refer each label to their string name
 labels_to_name = {}
-for line in labels:
-    label, string_name = line.split(':')
-    string_name = string_name[:-1] #Remove newline
-    labels_to_name[int(label)] = string_name
 
-#Create the file pattern of your TFRecord files so that it could be recognized later on
-file_pattern = 'flowers_%s_*.tfrecord'
 
-#Create a dictionary that will help people understand your dataset better. This is required by the Dataset class later.
-items_to_descriptions = {
-    'image': 'A 3-channel RGB coloured flower image that is either tulips, sunflowers, roses, dandelion, or daisy.',
-    'label': 'A label that is as such -- 0:daisy, 1:dandelion, 2:roses, 3:sunflowers, 4:tulips'
-}
+# a dictionary of flowers_data_dir name
+flowers_data_dir = '/home/aewin/work/anaconda3/code/models/research/slim/smorking'
+
 
 
 #================= TRAINING INFORMATION ==================
@@ -55,6 +51,11 @@ batch_size = 8
 initial_learning_rate = 0.0002
 learning_rate_decay_factor = 0.7
 num_epochs_before_decay = 2
+
+
+# In[10]:
+
+
 
 #============== DATASET LOADING ======================
 #We now create a function that creates a Dataset class which will give us many TFRecord files to feed in the examples into a queue in parallel.
@@ -204,12 +205,12 @@ def run():
        the operations defined belong to the graph you choose initially
     '''
     with tf.Graph().as_default() as graph:
-        tf.logging.set_verbosity(tf.logging.INFO) #Set the verbosity to INFO level
 
-        #First create the dataset and load one batch
-        dataset = get_split('train', dataset_dir, file_pattern=file_pattern)
+    
+        dataset = flowers.get_split('train', flowers_data_dir)
         images, _, labels = load_batch(dataset, batch_size=batch_size)
 
+        #Know the number steps to take before decaying the learning rate and batches per epoch
         #Know the number steps to take before decaying the learning rate and batches per epoch
         num_batches_per_epoch = int(dataset.num_samples / batch_size)
         num_steps_per_epoch = num_batches_per_epoch #Because one step is one batch processed
@@ -219,12 +220,14 @@ def run():
         #This function is used to init model and input necessary papermate
         with slim.arg_scope(inception_resnet_v2_arg_scope()):
             logits, end_points = inception_resnet_v2(images, num_classes = dataset.num_classes, is_training = True)
-       '''     logit = w*x + b,
+        '''    
+            logit = w*x + b,
             x: input, w: weight, b: bias. That's it.
             
-        #   logit is defined as the output of a neuron without applying activation function:
-        #Define the scopes that you want to exclude for restoration (force to train!)
+            logit is defined as the output of a neuron without applying activation function:
+            Define the scopes that you want to exclude for restoration (force to train!)
         '''
+        
         '''
         when you are training on grayscale images, you would have to remove the initial input convolutional layer, which assumes you have an RGB image with 3 channels, if you set the argument channels=3 for the Image decoder in the get_split function. In total, here are the 3 scopes that you can exclude:
 
@@ -335,24 +338,25 @@ def run():
             
             
         '''
+        #Run the managed session
         with sv.managed_session() as sess:
-            for step in xrange(num_steps_per_epoch * num_epochs):
+            for step in range(num_steps_per_epoch * num_epochs):
                 #At the start of every epoch, show the vital information:
-                if step % num_batches_per_epoch == 0:
-                    logging.info('Epoch %s/%s', step/num_batches_per_epoch + 1, num_epochs)
+                if (step % num_batches_per_epoch) == 0:
+                    print('Epoch %s/%s' %(step/num_batches_per_epoch + 1, num_epochs))
                     learning_rate_value, accuracy_value = sess.run([lr, accuracy])
-                    logging.info('Current Learning Rate: %s', learning_rate_value)
-                    logging.info('Current Streaming Accuracy: %s', accuracy_value)
+                    print('Current Learning Rate: %s' %(learning_rate_value))
+                    print('Current Streaming Accuracy: %s' %(accuracy_value))
 
                     # optionally, print your logits and predictions for a sanity check that things are going fine.
                     logits_value, probabilities_value, predictions_value, labels_value = sess.run([logits, probabilities, predictions, labels])
-                    print 'logits: \n', logits_value
-                    print 'Probabilities: \n', probabilities_value
-                    print 'predictions: \n', predictions_value
-                    print 'Labels:\n:', labels_value
+                    print( 'logits: \n', logits_value)
+                    print( 'Probabilities: \n', probabilities_value)
+                    print( 'predictions: \n', predictions_value)
+                    print( 'Labels:\n:', labels_value)
 
                 #Log the summaries every 10 step.
-                if step % 10 == 0:
+                if (step % 10) == 0:
                     loss, _ = train_step(sess, train_op, sv.global_step)
                     summaries = sess.run(my_summary_op)
                     sv.summary_computed(sess, summaries)
@@ -362,14 +366,14 @@ def run():
                     loss, _ = train_step(sess, train_op, sv.global_step)
 
             #We log the final training loss and accuracy
-            logging.info('Final Loss: %s', loss)
-            logging.info('Final Accuracy: %s', sess.run(accuracy))
+            print('Final Loss: %s' %loss)
+            print('Final Accuracy: %s' %sess.run(accuracy))
+                          
 
             #Once all the training has been done, save the log files and checkpoint model
-            logging.info('Finished training! Saving model to disk now.')
+            print('Finished training! Saving model to disk now.')
             # saver.save(sess, "./flowers_model.ckpt")
             sv.saver.save(sess, sv.save_path, global_step = sv.global_step)
-
 
 if __name__ == '__main__':
     run()
