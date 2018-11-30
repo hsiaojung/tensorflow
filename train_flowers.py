@@ -211,7 +211,7 @@ def run():
     with tf.Graph().as_default() as graph:
 
     
-        dataset = flowers.get_split('train', flowers_data_dir)
+        dataset = flowers.get_split('traning', flowers_data_dir)
         images, _, labels = load_batch(dataset, batch_size=batch_size)
 
         #Know the number steps to take before decaying the learning rate and batches per epoch
